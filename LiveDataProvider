@@ -1,0 +1,131 @@
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { LiveAQIStream, PolicyStatus, AIRecommendation, CitizenAlert } from '@/entities/all';
+
+const LiveDataContext = createContext();
+
+export const useLiveData = () => {
+    const context = useContext(LiveDataContext);
+    if (!context) {
+        throw new Error('useLiveData must be used within a LiveDataProvider');
+    }
+    return context;
+};
+
+export default function LiveDataProvider({ children }) {
+    const [liveAQI, setLiveAQI] = useState([]);
+    const [activePolicies, setActivePolicies] = useState([]);
+    const [aiRecommendations, setAiRecommendations] = useState([]);
+    const [citizenAlerts, setCitizenAlerts] = useState([]);
+    const [lastUpdate, setLastUpdate] = useState(new Date());
+    const [isConnected, setIsConnected] = useState(true);
+    const [loading, setLoading] = useState(true);
+    const intervalRef = useRef(null);
+
+    const fetchLiveData = useCallback(async () => {
+        try {
+            setIsConnected(true);
+            
+            const [aqiData, policiesData, recommendationsData, alertsData] = await Promise.allSettled([
+                LiveAQIStream.list('-last_updated', 20),
+                PolicyStatus.list('-start_datetime', 10),
+                AIRecommendation.filter({ is_active: true }, '-last_updated', 10),
+                CitizenAlert.filter({ is_sent: false }, '-created_date', 5)
+            ]);
+
+            if (aqiData.status === 'fulfilled' && aqiData.value) {
+                setLiveAQI(aqiData.value);
+            }
+
+            if (policiesData.status === 'fulfilled' && policiesData.value) {
+                // Filter for active policies
+                const activePols = policiesData.value.filter(p => p.status === 'active' || p.status === 'upcoming');
+                setActivePolicies(activePols);
+            }
+
+            if (recommendationsData.status === 'fulfilled' && recommendationsData.value) {
+                setAiRecommendations(recommendationsData.value);
+            }
+
+            if (alertsData.status === 'fulfilled' && alertsData.value) {
+                setCitizenAlerts(alertsData.value);
+            }
+
+            setLastUpdate(new Date());
+            setLoading(false);
+            
+        } catch (error) {
+            console.error('Error fetching live data:', error);
+            setIsConnected(false);
+            setLoading(false);
+        }
+    }, []);
+
+    const startRealTimeUpdates = useCallback(() => {
+        fetchLiveData();
+        intervalRef.current = setInterval(fetchLiveData, 30000);
+    }, [fetchLiveData]);
+
+    const stopRealTimeUpdates = useCallback(() => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+    }, []);
+
+    useEffect(() => {
+        startRealTimeUpdates();
+        
+        return () => {
+            stopRealTimeUpdates();
+        };
+    }, [startRealTimeUpdates, stopRealTimeUpdates]);
+
+    // Calculate real-time metrics with proper error handling
+    const averageAQI = liveAQI.length > 0 ? 
+        Math.round(liveAQI.reduce((sum, station) => sum + (station.aqi_current || 0), 0) / liveAQI.length) : 0;
+    
+    const aqiTrend = liveAQI.length > 0 ? 
+        liveAQI.reduce((sum, station) => {
+            const current = station.aqi_current || 0;
+            const previous = station.aqi_1hr_ago || current;
+            return sum + (current - previous);
+        }, 0) / liveAQI.length : 0;
+
+    const sourceContribution = liveAQI.length > 0 ? {
+        vehicular: Math.round(liveAQI.reduce((sum, s) => sum + (s.source_breakdown?.vehicular_percent || 0), 0) / liveAQI.length),
+        industrial: Math.round(liveAQI.reduce((sum, s) => sum + (s.source_breakdown?.industrial_percent || 0), 0) / liveAQI.length),
+        stubble_burning: Math.round(liveAQI.reduce((sum, s) => sum + (s.source_breakdown?.stubble_burning_percent || 0), 0) / liveAQI.length),
+        construction: Math.round(liveAQI.reduce((sum, s) => sum + (s.source_breakdown?.construction_percent || 0), 0) / liveAQI.length),
+        residential: Math.round(liveAQI.reduce((sum, s) => sum + (s.source_breakdown?.residential_percent || 0), 0) / liveAQI.length),
+        other: Math.round(liveAQI.reduce((sum, s) => sum + (s.source_breakdown?.other_percent || 0), 0) / liveAQI.length)
+    } : {
+        vehicular: 0,
+        industrial: 0,
+        stubble_burning: 0,
+        construction: 0,
+        residential: 0,
+        other: 0
+    };
+
+    const value = {
+        liveAQI,
+        activePolicies, 
+        aiRecommendations,
+        citizenAlerts,
+        averageAQI,
+        aqiTrend,
+        sourceContribution,
+        lastUpdate,
+        isConnected,
+        loading,
+        refreshData: fetchLiveData,
+        startRealTimeUpdates,
+        stopRealTimeUpdates
+    };
+
+    return (
+        <LiveDataContext.Provider value={value}>
+            {children}
+        </LiveDataContext.Provider>
+    );
+}

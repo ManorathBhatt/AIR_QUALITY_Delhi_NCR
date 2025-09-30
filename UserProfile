@@ -1,0 +1,162 @@
+{
+  "name": "UserProfile",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "User's full name"
+    },
+    "age": {
+      "type": "number",
+      "description": "User's age"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "male",
+        "female",
+        "other"
+      ],
+      "description": "User's gender"
+    },
+    "health_conditions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "asthma",
+          "heart_disease",
+          "diabetes",
+          "respiratory_issues",
+          "pregnancy",
+          "chronic_illness",
+          "none"
+        ]
+      },
+      "description": "Pre-existing health conditions"
+    },
+    "has_children": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user has children"
+    },
+    "children_ages": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "Ages of children if any"
+    },
+    "activity_level": {
+      "type": "string",
+      "enum": [
+        "sedentary",
+        "light",
+        "moderate",
+        "active",
+        "very_active"
+      ],
+      "default": "moderate",
+      "description": "User's activity level"
+    },
+    "outdoor_activities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "jogging",
+          "cycling",
+          "walking",
+          "sports",
+          "gardening",
+          "commuting"
+        ]
+      },
+      "description": "Preferred outdoor activities"
+    },
+    "location": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "address": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        }
+      },
+      "description": "User's primary location"
+    },
+    "notification_preferences": {
+      "type": "object",
+      "properties": {
+        "aqi_alerts": {
+          "type": "boolean",
+          "default": true
+        },
+        "health_warnings": {
+          "type": "boolean",
+          "default": true
+        },
+        "safe_route_suggestions": {
+          "type": "boolean",
+          "default": true
+        },
+        "daily_forecast": {
+          "type": "boolean",
+          "default": true
+        },
+        "community_reports": {
+          "type": "boolean",
+          "default": false
+        },
+        "educational_content": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "aqi_thresholds": {
+      "type": "object",
+      "properties": {
+        "warning_threshold": {
+          "type": "number",
+          "default": 100
+        },
+        "danger_threshold": {
+          "type": "number",
+          "default": 150
+        },
+        "emergency_threshold": {
+          "type": "number",
+          "default": 200
+        }
+      }
+    },
+    "clean_air_points": {
+      "type": "number",
+      "default": 0,
+      "description": "Gamification points earned"
+    },
+    "achievements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Unlocked achievements"
+    }
+  },
+  "required": [
+    "full_name",
+    "age",
+    "health_conditions"
+  ]
+}

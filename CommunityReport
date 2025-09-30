@@ -1,0 +1,136 @@
+{
+  "name": "CommunityReport",
+  "type": "object",
+  "properties": {
+    "report_type": {
+      "type": "string",
+      "enum": [
+        "stubble_burning",
+        "garbage_fire",
+        "industrial_smoke",
+        "construction_dust",
+        "vehicle_emission",
+        "illegal_burning",
+        "other"
+      ],
+      "description": "Type of pollution being reported"
+    },
+    "title": {
+      "type": "string",
+      "description": "Brief title of the report"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the pollution incident"
+    },
+    "location": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "address": {
+          "type": "string"
+        },
+        "landmark": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "latitude",
+        "longitude"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium",
+      "description": "Severity of the pollution incident"
+    },
+    "image_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs of uploaded images/videos"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "verified",
+        "investigating",
+        "resolved",
+        "rejected"
+      ],
+      "default": "pending",
+      "description": "Status of the report"
+    },
+    "verification_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "AI-based verification confidence"
+    },
+    "upvotes": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of upvotes from other users"
+    },
+    "downvotes": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of downvotes from other users"
+    },
+    "comments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "description": "Comments from other users"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags for categorization"
+    },
+    "is_anonymous": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to keep reporter anonymous"
+    },
+    "points_awarded": {
+      "type": "number",
+      "default": 0,
+      "description": "Clean air points awarded for this report"
+    }
+  },
+  "required": [
+    "report_type",
+    "title",
+    "description",
+    "location"
+  ]
+}

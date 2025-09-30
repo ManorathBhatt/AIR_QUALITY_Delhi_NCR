@@ -1,0 +1,60 @@
+{
+  "name": "PolicyData",
+  "type": "object",
+  "properties": {
+    "policy_name": {
+      "type": "string",
+      "description": "Name of the policy intervention"
+    },
+    "policy_type": {
+      "type": "string",
+      "enum": [
+        "odd_even",
+        "firecracker_ban",
+        "construction_halt",
+        "industrial_restriction",
+        "stubble_burning_ban"
+      ],
+      "description": "Type of policy intervention"
+    },
+    "implementation_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When the policy was implemented"
+    },
+    "duration_days": {
+      "type": "number",
+      "description": "Duration of policy in days"
+    },
+    "affected_areas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of areas affected by the policy"
+    },
+    "baseline_aqi": {
+      "type": "number",
+      "description": "AQI before policy implementation"
+    },
+    "current_aqi": {
+      "type": "number",
+      "description": "Current AQI after policy implementation"
+    },
+    "effectiveness_percentage": {
+      "type": "number",
+      "description": "Policy effectiveness as percentage improvement"
+    },
+    "citizen_compliance_rate": {
+      "type": "number",
+      "description": "Citizen compliance rate (0-1)"
+    }
+  },
+  "required": [
+    "policy_name",
+    "policy_type",
+    "implementation_date",
+    "baseline_aqi",
+    "current_aqi"
+  ]
+}

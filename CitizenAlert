@@ -1,0 +1,78 @@
+{
+  "name": "CitizenAlert",
+  "type": "object",
+  "properties": {
+    "alert_id": {
+      "type": "string"
+    },
+    "alert_type": {
+      "type": "string",
+      "enum": [
+        "health_warning",
+        "policy_update",
+        "emergency",
+        "activity_recommendation",
+        "safe_route"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "warning",
+        "critical",
+        "emergency"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "target_areas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "target_demographics": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "all",
+          "children",
+          "elderly",
+          "respiratory_conditions",
+          "heart_conditions",
+          "pregnant",
+          "athletes"
+        ]
+      }
+    },
+    "current_aqi_trigger": {
+      "type": "number",
+      "description": "AQI level that triggered this alert"
+    },
+    "expiry_datetime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "is_sent": {
+      "type": "boolean",
+      "default": false
+    },
+    "sent_count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "alert_id",
+    "alert_type",
+    "severity",
+    "title",
+    "message"
+  ]
+}

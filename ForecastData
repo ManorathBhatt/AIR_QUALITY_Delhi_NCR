@@ -1,0 +1,78 @@
+{
+  "name": "ForecastData",
+  "type": "object",
+  "properties": {
+    "location_name": {
+      "type": "string",
+      "description": "Name of the forecasted location"
+    },
+    "forecast_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time of the forecast"
+    },
+    "forecast_hours": {
+      "type": "number",
+      "enum": [
+        24,
+        48,
+        72
+      ],
+      "description": "Hours ahead forecast"
+    },
+    "predicted_aqi": {
+      "type": "number",
+      "description": "AI predicted AQI value"
+    },
+    "confidence_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "AI model confidence (0-1)"
+    },
+    "weather_factors": {
+      "type": "object",
+      "properties": {
+        "temperature": {
+          "type": "number"
+        },
+        "humidity": {
+          "type": "number"
+        },
+        "wind_speed": {
+          "type": "number"
+        },
+        "wind_direction": {
+          "type": "string"
+        }
+      }
+    },
+    "contributing_sources": {
+      "type": "object",
+      "properties": {
+        "vehicular": {
+          "type": "number"
+        },
+        "industrial": {
+          "type": "number"
+        },
+        "stubble_burning": {
+          "type": "number"
+        },
+        "construction": {
+          "type": "number"
+        },
+        "other": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "required": [
+    "location_name",
+    "forecast_date",
+    "forecast_hours",
+    "predicted_aqi",
+    "confidence_score"
+  ]
+}

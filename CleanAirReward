@@ -1,0 +1,77 @@
+{
+  "name": "CleanAirReward",
+  "type": "object",
+  "properties": {
+    "reward_name": {
+      "type": "string",
+      "description": "Name of the reward"
+    },
+    "reward_type": {
+      "type": "string",
+      "enum": [
+        "physical",
+        "voucher",
+        "discount",
+        "service",
+        "badge"
+      ],
+      "description": "Type of reward"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "health",
+        "transport",
+        "eco_products",
+        "education",
+        "entertainment"
+      ],
+      "description": "Category of reward"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the reward"
+    },
+    "points_required": {
+      "type": "number",
+      "description": "Points needed to redeem this reward"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Image of the reward"
+    },
+    "partner_name": {
+      "type": "string",
+      "description": "Partner organization providing the reward"
+    },
+    "validity_days": {
+      "type": "number",
+      "description": "Number of days reward is valid after redemption"
+    },
+    "stock_available": {
+      "type": "number",
+      "description": "Number of rewards available"
+    },
+    "terms_conditions": {
+      "type": "string",
+      "description": "Terms and conditions for the reward"
+    },
+    "is_featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether reward should be featured"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether reward is currently active"
+    }
+  },
+  "required": [
+    "reward_name",
+    "reward_type",
+    "category",
+    "description",
+    "points_required"
+  ]
+}

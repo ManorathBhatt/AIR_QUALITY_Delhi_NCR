@@ -1,0 +1,104 @@
+{
+  "name": "EducationalContent",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Title of the educational content"
+    },
+    "content_type": {
+      "type": "string",
+      "enum": [
+        "article",
+        "infographic",
+        "video",
+        "quiz",
+        "tips",
+        "seasonal_alert"
+      ],
+      "description": "Type of educational content"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "health_effects",
+        "pollution_sources",
+        "prevention_tips",
+        "seasonal_awareness",
+        "government_policies",
+        "eco_friendly_living"
+      ],
+      "description": "Category of content"
+    },
+    "content": {
+      "type": "string",
+      "description": "Main content text"
+    },
+    "media_url": {
+      "type": "string",
+      "description": "URL for images, videos, or infographics"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags for searchability"
+    },
+    "difficulty_level": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "default": "beginner",
+      "description": "Complexity level of content"
+    },
+    "estimated_read_time": {
+      "type": "number",
+      "description": "Estimated time to consume content in minutes"
+    },
+    "points_reward": {
+      "type": "number",
+      "default": 5,
+      "description": "Points awarded for consuming this content"
+    },
+    "is_featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether content should be featured"
+    },
+    "is_seasonal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether content is seasonal"
+    },
+    "season": {
+      "type": "string",
+      "enum": [
+        "winter",
+        "summer",
+        "monsoon",
+        "post_monsoon"
+      ],
+      "description": "Relevant season if seasonal content"
+    },
+    "likes": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of likes"
+    },
+    "views": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of views"
+    }
+  },
+  "required": [
+    "title",
+    "content_type",
+    "category",
+    "content"
+  ]
+}

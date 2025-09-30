@@ -1,0 +1,267 @@
+
+import React, { useState, useEffect } from "react";
+import { PolicyData, AQIDataPoint } from "@/entities/all";
+import { motion } from "framer-motion";
+import { ShieldCheck, TrendingDown, FileBarChart, Download, Target, Users, Zap } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line } from "recharts";
+import LiveDataProvider, { useLiveData } from "../components/realtime/LiveDataProvider";
+import LivePolicyTracker from "../components/realtime/LivePolicyTracker";
+import LiveSourceAnalysis from "../components/realtime/LiveSourceAnalysis";
+
+function PolicyHubContent() {
+    const { activePolicies, aiRecommendations, sourceContribution, averageAQI, isConnected } = useLiveData();
+    const [loading, setLoading] = useState(false);
+
+    const averageEffectiveness = activePolicies.length > 0 ? 
+        Math.round(activePolicies.reduce((sum, policy) => sum + (policy.actual_impact_percent || 0), 0) / activePolicies.length) : 0;
+
+    const sourceData = Object.entries(sourceContribution).map(([key, value]) => ({
+        name: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        value,
+        color: {
+            vehicular: '#ef4444',
+            industrial: '#f97316',
+            stubble_burning: '#facc15',
+            construction: '#22c54e', // Changed from 22c56e to 22c54e for consistency/better visibility in light mode
+            residential: '#3b82f6',
+            other: '#a855f7'
+        }[key] || '#6b7280'
+    }));
+
+    const exportReport = async () => {
+        setLoading(true);
+        try {
+            const reportData = {
+                timestamp: new Date().toISOString(),
+                summary: {
+                    activePolicies: activePolicies.length,
+                    avgEffectiveness: averageEffectiveness,
+                    currentAQI: averageAQI,
+                    dataQuality: isConnected ? 'Live' : 'Cached'
+                },
+                policies: activePolicies,
+                sourceContribution,
+                recommendations: aiRecommendations,
+                exportedAt: new Date().toLocaleString()
+            };
+            
+            const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `policy-report-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <motion.div 
+            className="p-4 md:p-6 lg:p-8 space-y-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+        >
+            <motion.div 
+                className="flex flex-col md:flex-row justify-between md:items-center gap-4"
+                initial={{ y: -20 }}
+                animate={{ y: 0 }}
+            >
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3">
+                        <ShieldCheck className="w-8 h-8 text-sky-500" />
+                        Live Policy
+                    </h1>
+                    <p className="text-muted-foreground mt-1 flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                        Live data-driven insights for policymakers
+                    </p>
+                </div>
+                <Button 
+                    onClick={exportReport} 
+                    disabled={loading}
+                    className="bg-gradient-to-r from-sky-500 to-blue-600"
+                >
+                    <Download className="w-4 h-4 mr-2" />
+                    {loading ? 'Exporting...' : 'Export Live Report'}
+                </Button>
+            </motion.div>
+
+            {/* Real-time Key Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                >
+                    <Card className="bg-gradient-to-br from-green-500/10 to-emerald-600/10 border-green-500/20">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-green-400 flex items-center gap-2 text-sm">
+                                <TrendingDown className="w-4 h-4" />
+                                Live Effectiveness
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-green-400">{averageEffectiveness}%</div>
+                            <Progress value={averageEffectiveness} className="mt-2" />
+                            <div className="text-xs text-muted-foreground mt-1">Real-time calculation</div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-sm">
+                                <FileBarChart className="w-4 h-4 text-blue-500" />
+                                Active Policies
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-foreground">{activePolicies.length}</div>
+                            <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20">
+                                Live Status
+                            </Badge>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                >
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-sm">
+                                <Target className="w-4 h-4 text-purple-500" />
+                                AI Recommendations
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-purple-400">{aiRecommendations.length}</div>
+                            <Badge className="bg-purple-500/10 text-purple-400 border-purple-500/20">
+                                Auto-Generated
+                            </Badge>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                >
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-sm">
+                                <Zap className="w-4 h-4 text-orange-500" />
+                                Current AQI
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-orange-400">{averageAQI}</div>
+                            <div className="text-xs text-muted-foreground">Live average</div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            </div>
+
+            <Tabs defaultValue="policies" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="policies">Live Policy Status</TabsTrigger>
+                    <TabsTrigger value="sources">Source Analysis</TabsTrigger>
+                    <TabsTrigger value="recommendations">AI Insights</TabsTrigger>
+                    <TabsTrigger value="effectiveness">Effectiveness</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="policies" className="space-y-6 mt-6">
+                    <LivePolicyTracker />
+                </TabsContent>
+
+                <TabsContent value="sources" className="space-y-6 mt-6">
+                    <LiveSourceAnalysis />
+                </TabsContent>
+
+                <TabsContent value="recommendations" className="space-y-6 mt-6">
+                    <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                    >
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Target className="w-5 h-5 text-purple-500" />
+                                    Real-Time AI Recommendations
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    {aiRecommendations.length > 0 ? aiRecommendations.map((rec, index) => (
+                                        <div key={rec.recommendation_id || index} className="p-4 border rounded-lg">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <Badge className={`mb-2 ${
+                                                        rec.priority_level === 'critical' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                                        rec.priority_level === 'high' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                                                        rec.priority_level === 'medium' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                                                        'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                                    }`}>
+                                                        {rec.priority_level.toUpperCase()} Priority
+                                                    </Badge>
+                                                    <h4 className="font-semibold">{rec.title}</h4>
+                                                    <p className="text-sm text-muted-foreground mt-1">{rec.description}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="font-semibold text-green-500">
+                                                        {rec.expected_aqi_improvement}% improvement
+                                                    </div>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        {Math.round(rec.confidence_score * 100)}% confidence
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-between text-xs text-muted-foreground">
+                                                <span>Timeline: {rec.implementation_timeline?.replace(/_/g, ' ')}</span>
+                                                <span>Cost: {rec.estimated_cost}</span>
+                                            </div>
+                                        </div>
+                                    )) : (
+                                        <div className="text-center py-8 text-muted-foreground">
+                                            AI recommendations are being generated based on live data...
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                </TabsContent>
+
+                <TabsContent value="effectiveness" className="space-y-6 mt-6">
+                    <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                    >
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Real-Time Policy Effectiveness</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <BarChart data={activePolicies.map(p => ({
+                                        name: p.policy_name.substring(0, 20) + (p.policy_name.length > 20 ? '...' : ''),
+                                        effectiveness: p.actual_impact_percent || 0,
+                                        compliance: p.compliance_rate_percent || 0
+                                    }))}>
+ 

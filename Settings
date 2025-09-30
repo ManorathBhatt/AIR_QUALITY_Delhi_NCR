@@ -1,0 +1,12 @@
+import React from 'react';
+import { Construction } from 'lucide-react';
+
+export default function SettingsPage() {
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-center p-8">
+            <Construction className="w-16 h-16 text-sky-500 mb-4" />
+            <h1 className="text-2xl font-bold text-foreground">Settings Page</h1>
+            <p className="text-muted-foreground mt-2">This feature is under construction.</p>
+        </div>
+    );
+}

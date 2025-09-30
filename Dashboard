@@ -1,0 +1,228 @@
+import React, { useState, useEffect } from "react";
+import { AQIDataPoint, PollutionReport } from "@/entities/all";
+import { motion } from "framer-motion";
+import { MapPin, Rss, AlertTriangle, Building, Wind, Zap, Database, RefreshCw } from "lucide-react";
+import AQIIndicator from "../components/dashboard/AQIIndicator";
+import PollutantCard from "../components/dashboard/PollutantCard";
+import ReportCard from "../components/dashboard/ReportCard";
+import LiveDataProvider, { useLiveData } from "../components/realtime/LiveDataProvider";
+import LiveMetricsCard from "../components/realtime/LiveMetricsCard";
+import LiveSourceAnalysis from "../components/realtime/LiveSourceAnalysis";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
+function DashboardContent() {
+    const { liveAQI, averageAQI, isConnected, lastUpdate, refreshData, loading } = useLiveData();
+    const [reports, setReports] = useState([]);
+    const [reportsLoading, setReportsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchReports = async () => {
+            try {
+                const reportsData = await PollutionReport.list('-created_date', 6);
+                setReports(reportsData || []);
+            } catch (error) {
+                console.error('Error fetching reports:', error);
+                setReports([]);
+            }
+            setReportsLoading(false);
+        };
+        fetchReports();
+    }, []);
+
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { y: 20, opacity: 0 },
+        visible: {
+            y: 0,
+            opacity: 1
+        }
+    };
+
+    if (loading) {
+        return <DashboardSkeleton />;
+    }
+
+    const latestStation = liveAQI.length > 0 ? liveAQI[0] : null;
+
+    const pollutants = latestStation ? [
+        { name: "PM2.5", value: latestStation.pm25_current, icon: <Wind className="w-4 h-4"/>, unit: "μg/m³" },
+        { name: "PM10", value: latestStation.pm10_current, icon: <Building className="w-4 h-4"/>, unit: "μg/m³" },
+        { name: "CO", value: latestStation.co_current, icon: <AlertTriangle className="w-4 h-4"/>, unit: "ppm" },
+        { name: "NO₂", value: latestStation.no2_current, icon: <AlertTriangle className="w-4 h-4"/>, unit: "ppb" },
+    ] : [
+        { name: "PM2.5", value: null, icon: <Wind className="w-4 h-4"/>, unit: "μg/m³" },
+        { name: "PM10", value: null, icon: <Building className="w-4 h-4"/>, unit: "μg/m³" },
+        { name: "CO", value: null, icon: <AlertTriangle className="w-4 h-4"/>, unit: "ppm" },
+        { name: "NO₂", value: null, icon: <AlertTriangle className="w-4 h-4"/>, unit: "ppb" },
+    ];
+
+    return (
+        <motion.div 
+            className="p-4 md:p-6 lg:p-8 space-y-6 md:space-y-8"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+        >
+            {/* Enhanced Header with Real-time Status */}
+            <motion.div 
+                variants={itemVariants} 
+                className="flex flex-col md:flex-row justify-between md:items-center gap-4"
+            >
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3">
+                        <Database className="w-8 h-8 text-sky-500" />
+                        Real-Time Dashboard
+                    </h1>
+                    <p className="text-md text-muted-foreground flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                        {latestStation ? latestStation.station_name : 'Delhi-NCR'} - Live Air Quality Monitoring
+                    </p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Badge className={`${isConnected ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                        {isConnected ? 'Connected' : 'Offline'}
+                    </Badge>
+                    <Button variant="outline" onClick={refreshData} className="flex items-center gap-2">
+                        <RefreshCw className="w-4 h-4" />
+                        Refresh
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                        Updated: {lastUpdate.toLocaleTimeString()}
+                    </p>
+                </div>
+            </motion.div>
+
+            {/* Live Metrics Cards */}
+            <motion.div variants={itemVariants}>
+                <LiveMetricsCard />
+            </motion.div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+                {/* Main AQI Display */}
+                <motion.div variants={itemVariants} className="lg:col-span-1">
+                    <Card className="bg-gradient-to-br from-sky-500/5 to-blue-600/5 border-sky-500/20 p-6">
+                        {latestStation && averageAQI > 0 ? (
+                            <AQIIndicator aqi={averageAQI} />
+                        ) : (
+                            <div className="flex flex-col items-center justify-center text-center py-8">
+                                <Database className="mx-auto h-12 w-12 text-sky-500" />
+                                <h3 className="mt-4 text-lg font-medium">Live Data Available</h3>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Current AQI: {averageAQI || 'Loading...'}
+                                </p>
+                                <Badge className="mt-2 bg-green-500/10 text-green-400 border-green-500/20">
+                                    {liveAQI.length} stations online
+                                </Badge>
+                            </div>
+                        )}
+                    </Card>
+                </motion.div>
+                
+                {/* Live Pollutant Cards */}
+                <motion.div 
+                    variants={containerVariants}
+                    className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4"
+                >
+                    {pollutants.map(p => (
+                         <motion.div key={p.name} variants={itemVariants}>
+                            <PollutantCard name={p.name} value={p.value} icon={p.icon} unit={p.unit} />
+                         </motion.div>
+                    ))}
+                </motion.div>
+            </div>
+
+            {/* Live Source Analysis */}
+            <motion.div variants={itemVariants}>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Zap className="w-5 h-5 text-blue-500" />
+                            Live Source Analysis
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <LiveSourceAnalysis />
+                    </CardContent>
+                </Card>
+            </motion.div>
+            
+            {/* Recent Citizen Reports */}
+            <motion.div variants={itemVariants}>
+                <Card>
+                     <CardHeader>
+                        <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+                            <Rss className="w-5 h-5 text-sky-500" />
+                            Recent Citizen Reports
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {reportsLoading ? (
+                                Array(3).fill(0).map((_, i) => (
+                                    <Skeleton key={i} className="h-32 rounded-lg" />
+                                ))
+                            ) : reports.length > 0 ? reports.map(report => (
+                               <ReportCard key={report.id} report={report} />
+                            )) : (
+                                <div className="col-span-full text-center py-8">
+                                    <MapPin className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
+                                    <p className="text-muted-foreground">No recent citizen reports available.</p>
+                                    <p className="text-sm text-muted-foreground mt-1">Be the first to report pollution in your area!</p>
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </motion.div>
+        </motion.div>
+    );
+}
+
+export default function Dashboard() {
+    return (
+        <LiveDataProvider>
+            <DashboardContent />
+        </LiveDataProvider>
+    );
+}
+
+const DashboardSkeleton = () => (
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 md:space-y-8">
+        <div className="flex justify-between items-center">
+            <div>
+                <Skeleton className="h-8 w-64 mb-2" />
+                <Skeleton className="h-5 w-80" />
+            </div>
+            <div className="flex gap-2">
+                <Skeleton className="h-9 w-20" />
+                <Skeleton className="h-9 w-24" />
+                <Skeleton className="h-5 w-32" />
+            </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {Array(4).fill(0).map((_, i) => (
+                <Skeleton key={i} className="h-24 rounded-xl" />
+            ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+            <Skeleton className="lg:col-span-1 h-80 rounded-2xl" />
+            <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+                {Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
+            </div>
+        </div>
+        <Skeleton className="h-96 rounded-2xl" />
+        <Skeleton className="h-64 rounded-2xl" />
+    </div>
+);

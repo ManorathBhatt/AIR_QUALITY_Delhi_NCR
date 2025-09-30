@@ -1,0 +1,45 @@
+{
+  "name": "PollutionReport",
+  "type": "object",
+  "properties": {
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "report_type": {
+      "type": "string",
+      "enum": [
+        "waste_burning",
+        "industrial_smoke",
+        "construction_dust",
+        "vehicle_emission",
+        "other"
+      ],
+      "description": "Type of pollution source reported"
+    },
+    "description": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL of the uploaded image of the incident"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "verified",
+        "resolved"
+      ],
+      "default": "pending",
+      "description": "Status of the report"
+    }
+  },
+  "required": [
+    "latitude",
+    "longitude",
+    "report_type"
+  ]
+}

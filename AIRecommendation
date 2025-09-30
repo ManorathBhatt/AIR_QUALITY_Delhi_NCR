@@ -1,0 +1,103 @@
+{
+  "name": "AIRecommendation",
+  "type": "object",
+  "properties": {
+    "recommendation_id": {
+      "type": "string"
+    },
+    "priority_level": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "high",
+        "medium",
+        "low"
+      ],
+      "description": "AI-determined priority based on current data"
+    },
+    "recommendation_type": {
+      "type": "string",
+      "enum": [
+        "immediate_action",
+        "policy_suggestion",
+        "infrastructure",
+        "monitoring",
+        "public_awareness"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "target_areas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "expected_aqi_improvement": {
+      "type": "number",
+      "description": "Expected AQI improvement percentage"
+    },
+    "confidence_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "AI model confidence in recommendation"
+    },
+    "implementation_timeline": {
+      "type": "string",
+      "enum": [
+        "immediate",
+        "1-3_days",
+        "1-2_weeks",
+        "1-3_months",
+        "long_term"
+      ]
+    },
+    "estimated_cost": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "very_high"
+      ]
+    },
+    "supporting_data": {
+      "type": "object",
+      "properties": {
+        "current_aqi_avg": {
+          "type": "number"
+        },
+        "trend_direction": {
+          "type": "string"
+        },
+        "weather_factors": {
+          "type": "object"
+        },
+        "source_contribution": {
+          "type": "object"
+        }
+      }
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "recommendation_id",
+    "priority_level",
+    "recommendation_type",
+    "title",
+    "description",
+    "confidence_score"
+  ]
+}

@@ -1,0 +1,209 @@
+import React, { useState, useEffect } from "react";
+import { CleanAirReward } from "@/entities/CleanAirReward";
+import { UserProfile } from "@/entities/UserProfile";
+import { User } from "@/entities/User";
+import { motion } from "framer-motion";
+import { Award, Ticket, ShoppingCart, Gem, Filter, X } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+const categoryIcons = {
+  health: { icon: "❤️", color: "from-red-500/20" },
+  transport: { icon: "🚌", color: "from-blue-500/20" },
+  eco_products: { icon: "🌱", color: "from-green-500/20" },
+  education: { icon: "📚", color: "from-purple-500/20" },
+  entertainment: { icon: "🎉", color: "from-yellow-500/20" },
+};
+
+export default function RewardsPage() {
+  const [rewards, setRewards] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedReward, setSelectedReward] = useState(null);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [rewardsData, user, profilesData] = await Promise.all([
+        CleanAirReward.filter({ is_active: true }),
+        User.me(),
+        UserProfile.list(),
+      ]);
+
+      setRewards(rewardsData || []);
+      const userProfile = profilesData.find(p => p.created_by === user.email);
+      setProfile(userProfile);
+
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+    setLoading(false);
+  };
+  
+  const handleRedeem = async () => {
+      if (!profile || !selectedReward) return;
+
+      if (profile.clean_air_points < selectedReward.points_required) {
+          alert("Not enough points!");
+          return;
+      }
+      
+      try {
+          const updatedProfile = { 
+              ...profile,
+              clean_air_points: profile.clean_air_points - selectedReward.points_required 
+          };
+          
+          const updatedReward = {
+              ...selectedReward,
+              stock_available: selectedReward.stock_available - 1
+          };
+
+          await Promise.all([
+              UserProfile.update(profile.id, updatedProfile),
+              CleanAirReward.update(selectedReward.id, updatedReward)
+          ]);
+          
+          alert("Reward redeemed successfully!");
+          setSelectedReward(null);
+          fetchData();
+
+      } catch (error) {
+          console.error("Error redeeming reward:", error);
+          alert("Failed to redeem reward.");
+      }
+  };
+
+  const filteredRewards = rewards.filter(
+    (reward) =>
+      selectedCategory === "all" || reward.category === selectedCategory
+  );
+
+  const categories = ["all", ...new Set(rewards.map((r) => r.category))];
+
+  return (
+    <motion.div
+      className="p-4 md:p-6 lg:p-8 space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <Dialog open={!!selectedReward} onOpenChange={() => setSelectedReward(null)}>
+        <DialogContent>
+          {selectedReward && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedReward.reward_name}</DialogTitle>
+                <DialogDescription>
+                  Partner: {selectedReward.partner_name}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <img
+                  src={selectedReward.image_url}
+                  alt={selectedReward.reward_name}
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <p>{selectedReward.description}</p>
+                <div className="flex items-center gap-2">
+                    <Gem className="w-5 h-5 text-emerald-500"/>
+                    <span className="font-bold text-lg">{selectedReward.points_required} Points</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{selectedReward.terms_conditions}</p>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setSelectedReward(null)}>Cancel</Button>
+                <Button onClick={handleRedeem} disabled={(profile?.clean_air_points || 0) < selectedReward.points_required}>
+                    Redeem Now
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+              <Award className="w-8 h-8 text-yellow-500"/>
+              Clean Air Rewards
+          </h1>
+          <p className="text-muted-foreground">Redeem your points for exciting rewards!</p>
+      </div>
+
+      {profile && (
+        <Card className="bg-gradient-to-r from-emerald-600 to-cyan-600 text-white">
+          <CardContent className="p-6 flex justify-between items-center">
+            <div>
+              <p className="text-sm">Your Points</p>
+              <p className="text-4xl font-bold">{profile.clean_air_points}</p>
+            </div>
+            <Gem className="w-16 h-16 opacity-20"/>
+          </CardContent>
+        </Card>
+      )}
+
+      <div>
+        <h2 className="text-lg font-semibold mb-2 flex items-center gap-2"><Filter/> Categories</h2>
+        <div className="flex flex-wrap gap-2">
+            {categories.map(cat => (
+                <Button 
+                    key={cat}
+                    variant={selectedCategory === cat ? 'default' : 'outline'}
+                    onClick={() => setSelectedCategory(cat)}
+                    className="capitalize"
+                >
+                    {cat}
+                </Button>
+            ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {loading
+          ? Array(6).fill(0).map((_, i) => (
+              <Card key={i} className="h-64 animate-pulse bg-muted"></Card>
+            ))
+          : filteredRewards.map((reward) => (
+              <motion.div
+                key={reward.id}
+                whileHover={{ y: -5 }}
+                onClick={() => setSelectedReward(reward)}
+              >
+                <Card className={`overflow-hidden cursor-pointer h-full flex flex-col bg-gradient-to-br ${categoryIcons[reward.category]?.color || 'from-gray-500/20'} to-card`}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                        <Badge className="capitalize bg-card text-foreground">{reward.category}</Badge>
+                        <div className="flex items-center gap-1 text-emerald-400 font-semibold">
+                            <Gem className="w-4 h-4"/>
+                            {reward.points_required}
+                        </div>
+                    </div>
+                    <CardTitle className="pt-2">{reward.reward_name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex-grow flex flex-col justify-end">
+                    <p className="text-sm text-muted-foreground line-clamp-2">{reward.description}</p>
+                    <p className="text-xs text-muted-foreground mt-2">By {reward.partner_name}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+      </div>
+    </motion.div>
+  );
+}

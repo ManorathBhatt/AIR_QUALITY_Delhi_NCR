@@ -1,0 +1,48 @@
+{
+  "name": "AQIDataPoint",
+  "type": "object",
+  "properties": {
+    "location_name": {
+      "type": "string",
+      "description": "Name of the monitoring station or area"
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "aqi": {
+      "type": "number",
+      "description": "Overall Air Quality Index value"
+    },
+    "pm25": {
+      "type": "number",
+      "description": "PM2.5 concentration (μg/m³)"
+    },
+    "pm10": {
+      "type": "number",
+      "description": "PM10 concentration (μg/m³)"
+    },
+    "co": {
+      "type": "number",
+      "description": "Carbon Monoxide concentration (ppm)"
+    },
+    "no2": {
+      "type": "number",
+      "description": "Nitrogen Dioxide concentration (ppb)"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The time the data was recorded"
+    }
+  },
+  "required": [
+    "location_name",
+    "latitude",
+    "longitude",
+    "aqi",
+    "timestamp"
+  ]
+}

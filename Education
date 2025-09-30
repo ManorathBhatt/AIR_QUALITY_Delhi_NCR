@@ -1,0 +1,167 @@
+import React, { useState, useEffect } from "react";
+import { EducationalContent } from "@/entities/EducationalContent";
+import { UserProfile } from "@/entities/UserProfile";
+import { User } from "@/entities/User";
+import { motion } from "framer-motion";
+import { BookOpen, Search, ThumbsUp, Eye, Award, CheckCircle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from "@/components/ui/dialog";
+
+const categoryColors = {
+  health_effects: "bg-red-500/10 text-red-400",
+  pollution_sources: "bg-purple-500/10 text-purple-400",
+  prevention_tips: "bg-green-500/10 text-green-400",
+  seasonal_awareness: "bg-blue-500/10 text-blue-400",
+  government_policies: "bg-yellow-500/10 text-yellow-400",
+  eco_friendly_living: "bg-teal-500/10 text-teal-400",
+};
+
+export default function EducationPage() {
+  const [contents, setContents] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedContent, setSelectedContent] = useState(null);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [contentsData, user, profilesData] = await Promise.all([
+        EducationalContent.list(),
+        User.me(),
+        UserProfile.list()
+      ]);
+      
+      setContents(contentsData || []);
+      const userProfile = profilesData.find(p => p.created_by === user.email);
+      setProfile(userProfile);
+
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+    setLoading(false);
+  };
+  
+  const handleContentRead = async (content) => {
+    setSelectedContent(content);
+    if(profile && content.points_reward > 0) {
+        // Here you can add logic to check if user has already read this
+        // For simplicity, we award points every time.
+        try {
+            const updatedProfile = {
+                ...profile,
+                clean_air_points: (profile.clean_air_points || 0) + content.points_reward
+            };
+            await UserProfile.update(profile.id, updatedProfile);
+            setProfile(updatedProfile); // update state locally
+        } catch (error) {
+            console.error("Failed to award points", error);
+        }
+    }
+  };
+
+  const filteredContents = contents.filter(
+    (content) =>
+      content.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      content.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  return (
+    <motion.div
+      className="p-4 md:p-6 lg:p-8 space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+        <Dialog open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                {selectedContent && (
+                    <>
+                    <DialogHeader>
+                        <Badge className={`${categoryColors[selectedContent.category]} w-fit`}>{selectedContent.category.replace(/_/g, ' ')}</Badge>
+                        <DialogTitle className="text-2xl mt-2">{selectedContent.title}</DialogTitle>
+                         <DialogDescription className="flex items-center gap-4 text-xs pt-2">
+                           <span>{selectedContent.estimated_read_time} min read</span>
+                           <span>Difficulty: {selectedContent.difficulty_level}</span>
+                         </DialogDescription>
+                    </DialogHeader>
+                    {selectedContent.media_url && (
+                        <img src={selectedContent.media_url} alt={selectedContent.title} className="w-full h-64 object-cover rounded-lg mt-4" />
+                    )}
+                    <div className="prose dark:prose-invert mt-4">
+                        {selectedContent.content}
+                    </div>
+                    {selectedContent.points_reward > 0 && (
+                         <div className="mt-4 flex items-center gap-2 text-emerald-500 bg-emerald-500/10 p-3 rounded-lg">
+                            <CheckCircle/>
+                            You earned {selectedContent.points_reward} points for reading this!
+                         </div>
+                    )}
+                    </>
+                )}
+            </DialogContent>
+        </Dialog>
+      
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+          <BookOpen className="w-8 h-8 text-sky-500" />
+          Education Hub
+        </h1>
+        <p className="text-muted-foreground">Learn about air quality and how to protect yourself.</p>
+      </div>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        <Input
+          placeholder="Search for articles, tips, videos..."
+          className="pl-10"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {loading ? Array(6).fill(0).map((_,i) => <Card key={i} className="h-60 bg-muted animate-pulse"/>) :
+        filteredContents.map((content) => (
+          <motion.div key={content.id} whileHover={{y: -5}} onClick={() => handleContentRead(content)}>
+            <Card className="h-full flex flex-col cursor-pointer overflow-hidden">
+              {content.media_url && (
+                <img src={content.media_url} alt={content.title} className="w-full h-32 object-cover"/>
+              )}
+              <CardHeader>
+                <Badge className={`${categoryColors[content.category]} w-fit capitalize`}>
+                  {content.category.replace(/_/g, ' ')}
+                </Badge>
+                <CardTitle className="text-lg mt-2 line-clamp-2">{content.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex-grow flex flex-col justify-end">
+                <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1"><ThumbsUp className="w-4 h-4"/> {content.likes || 0}</div>
+                        <div className="flex items-center gap-1"><Eye className="w-4 h-4"/> {content.views || 0}</div>
+                    </div>
+                    {content.points_reward > 0 && (
+                        <div className="flex items-center gap-1 text-emerald-500 font-medium">
+                            <Award className="w-4 h-4"/> +{content.points_reward}
+                        </div>
+                    )}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}

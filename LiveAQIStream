@@ -1,0 +1,108 @@
+{
+  "name": "LiveAQIStream",
+  "type": "object",
+  "properties": {
+    "station_id": {
+      "type": "string",
+      "description": "Unique identifier for monitoring station"
+    },
+    "station_name": {
+      "type": "string",
+      "description": "Name of the monitoring station"
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "aqi_current": {
+      "type": "number",
+      "description": "Current AQI reading"
+    },
+    "aqi_1hr_ago": {
+      "type": "number",
+      "description": "AQI reading 1 hour ago"
+    },
+    "pm25_current": {
+      "type": "number"
+    },
+    "pm10_current": {
+      "type": "number"
+    },
+    "co_current": {
+      "type": "number"
+    },
+    "no2_current": {
+      "type": "number"
+    },
+    "so2_current": {
+      "type": "number"
+    },
+    "source_breakdown": {
+      "type": "object",
+      "properties": {
+        "vehicular_percent": {
+          "type": "number"
+        },
+        "industrial_percent": {
+          "type": "number"
+        },
+        "stubble_burning_percent": {
+          "type": "number"
+        },
+        "construction_percent": {
+          "type": "number"
+        },
+        "residential_percent": {
+          "type": "number"
+        },
+        "other_percent": {
+          "type": "number"
+        }
+      }
+    },
+    "weather_data": {
+      "type": "object",
+      "properties": {
+        "temperature": {
+          "type": "number"
+        },
+        "humidity": {
+          "type": "number"
+        },
+        "wind_speed": {
+          "type": "number"
+        },
+        "wind_direction": {
+          "type": "string"
+        },
+        "visibility": {
+          "type": "number"
+        }
+      }
+    },
+    "data_quality": {
+      "type": "string",
+      "enum": [
+        "excellent",
+        "good",
+        "fair",
+        "poor"
+      ],
+      "description": "Quality of sensor data"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "station_id",
+    "station_name",
+    "latitude",
+    "longitude",
+    "aqi_current",
+    "last_updated"
+  ]
+}

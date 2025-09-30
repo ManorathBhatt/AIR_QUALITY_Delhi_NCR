@@ -1,0 +1,108 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { TrendingUp, TrendingDown, Minus, Wifi, WifiOff, Database, Users } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useLiveData } from './LiveDataProvider';
+
+export default function LiveMetricsCard() {
+    const { averageAQI, aqiTrend, isConnected, lastUpdate, liveAQI } = useLiveData();
+
+    const getTrendIcon = () => {
+        if (Math.abs(aqiTrend) < 1) return <Minus className="w-4 h-4 text-gray-500" />;
+        if (aqiTrend > 0) return <TrendingUp className="w-4 h-4 text-red-500" />;
+        return <TrendingDown className="w-4 h-4 text-green-500" />;
+    };
+
+    const getTrendColor = () => {
+        if (Math.abs(aqiTrend) < 1) return "text-gray-500";
+        if (aqiTrend > 0) return "text-red-500";
+        return "text-green-500";
+    };
+
+    const getAQIColor = (aqi) => {
+        if (aqi <= 50) return "text-green-500";
+        if (aqi <= 100) return "text-yellow-500";
+        if (aqi <= 150) return "text-orange-500";
+        if (aqi <= 200) return "text-red-500";
+        if (aqi <= 300) return "text-purple-500";
+        return "text-red-800";
+    };
+
+    const qualityStations = liveAQI.filter(s => s.data_quality === 'excellent' || s.data_quality === 'good').length;
+
+    return (
+        <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="grid grid-cols-1 md:grid-cols-4 gap-4"
+        >
+            <Card className="bg-gradient-to-br from-blue-500/10 to-sky-500/10 border-blue-500/20">
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center justify-between">
+                        <span className="text-blue-400">Live AQI</span>
+                        {isConnected ? 
+                            <Wifi className="w-4 h-4 text-green-500" /> : 
+                            <WifiOff className="w-4 h-4 text-red-500" />
+                        }
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className={`text-3xl font-bold ${getAQIColor(averageAQI)}`}>
+                        {averageAQI || 0}
+                    </div>
+                    <div className="flex items-center gap-1 mt-1">
+                        {getTrendIcon()}
+                        <span className={`text-sm font-medium ${getTrendColor()}`}>
+                            {Math.abs(aqiTrend) < 1 ? 'Stable' : 
+                             `${aqiTrend > 0 ? '+' : ''}${aqiTrend.toFixed(1)}`}
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-1">vs 1h ago</span>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-sm text-purple-400 flex items-center gap-1">
+                        <Database className="w-4 h-4" />
+                        Active Stations
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold text-foreground">{liveAQI.length}</div>
+                    <Badge className="mt-1 bg-green-500/10 text-green-400 border-green-500/20">
+                        Live Monitoring
+                    </Badge>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-sm text-orange-400 flex items-center gap-1">
+                        <Users className="w-4 h-4" />
+                        Data Quality
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold text-orange-400">
+                        {qualityStations}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Good Quality Sources</p>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-sm text-green-400">Last Update</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-sm font-bold text-green-400">
+                        {lastUpdate.toLocaleTimeString()}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Auto-refresh: 30s</p>
+                </CardContent>
+            </Card>
+        </motion.div>
+    );
+}

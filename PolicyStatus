@@ -1,0 +1,81 @@
+{
+  "name": "PolicyStatus",
+  "type": "object",
+  "properties": {
+    "policy_id": {
+      "type": "string",
+      "description": "Unique policy identifier"
+    },
+    "policy_name": {
+      "type": "string"
+    },
+    "policy_type": {
+      "type": "string",
+      "enum": [
+        "odd_even",
+        "firecracker_ban",
+        "construction_halt",
+        "industrial_restriction",
+        "stubble_burning_ban",
+        "public_transport_free",
+        "vehicle_restriction",
+        "emergency_measures"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "upcoming",
+        "expired",
+        "suspended"
+      ],
+      "description": "Current status of the policy"
+    },
+    "start_datetime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "end_datetime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "affected_areas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "baseline_aqi_before": {
+      "type": "number"
+    },
+    "current_aqi_reading": {
+      "type": "number"
+    },
+    "estimated_impact_percent": {
+      "type": "number"
+    },
+    "actual_impact_percent": {
+      "type": "number"
+    },
+    "compliance_rate_percent": {
+      "type": "number"
+    },
+    "citizen_reports_count": {
+      "type": "number",
+      "default": 0
+    },
+    "auto_notifications_sent": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "policy_id",
+    "policy_name",
+    "policy_type",
+    "status",
+    "start_datetime",
+    "end_datetime"
+  ]
+}

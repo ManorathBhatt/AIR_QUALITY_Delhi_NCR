@@ -1,0 +1,267 @@
+import React, { useState, useEffect } from "react";
+import { UserProfile } from "@/entities/UserProfile";
+import { User } from "@/entities/User";
+import { motion } from "framer-motion";
+import { Heart, Shield, Activity, AlertTriangle, Phone, MapPin, Trophy, Star, Ambulance, Wind, UserCheck } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import ProfileSetupForm from "../components/health/ProfileSetupForm";
+import LiveDataProvider, { useLiveData } from "../components/realtime/LiveDataProvider";
+
+function MyHealthContent() {
+    const [profile, setProfile] = useState(null);
+    const [showProfileForm, setShowProfileForm] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const { averageAQI, isConnected } = useLiveData();
+
+    useEffect(() => {
+        fetchProfile();
+    }, []);
+
+    const fetchProfile = async () => {
+        setLoading(true);
+        try {
+            const user = await User.me();
+            const profiles = await UserProfile.filter({ created_by: user.email });
+            if (profiles.length > 0) {
+                setProfile(profiles[0]);
+            }
+        } catch (error) {
+            console.error("Error fetching profile:", error);
+        }
+        setLoading(false);
+    };
+
+    const handleProfileSaved = (savedProfile) => {
+        setProfile(savedProfile);
+        setShowProfileForm(false);
+        fetchProfile();
+    };
+    
+    // More dynamic health score based on live AQI
+    const healthScore = Math.max(0, Math.round(100 - (averageAQI / 3.5)));
+
+    const getHealthScoreColor = (score) => {
+        if (score >= 80) return "text-emerald-500";
+        if (score >= 60) return "text-yellow-500";
+        return "text-red-500";
+    };
+
+    const getRecommendations = () => {
+        const recommendations = [];
+        if (!profile) return recommendations;
+
+        const aqi = averageAQI;
+        const isElderly = profile.age && profile.age > 60;
+        const isPregnant = profile.health_conditions?.includes('pregnancy');
+        const hasAsthma = profile.health_conditions?.includes('asthma');
+        const hasHeartDisease = profile.health_conditions?.includes('heart_disease');
+
+        // General Recommendations
+        if (aqi > 300) {
+            recommendations.push({ title: "Hazardous Air Quality", message: "Remain indoors, keep activity levels very low. Use air purifiers.", type: "danger" });
+        } else if (aqi > 200) {
+            recommendations.push({ title: "Very Unhealthy Air", message: "Avoid all outdoor physical activity. Keep windows closed.", type: "danger" });
+        } else if (aqi > 150) {
+            recommendations.push({ title: "Unhealthy Air", message: "Everyone may experience health effects. Limit outdoor exertion.", type: "warning" });
+        } else if (aqi > 100) {
+            recommendations.push({ title: "Unhealthy for Sensitive Groups", message: "Limit prolonged outdoor activity if you have health conditions.", type: "info" });
+        } else {
+             recommendations.push({ title: "Good Air Quality", message: "It's a great day for outdoor activities! Enjoy the fresh air.", type: "success" });
+        }
+
+        // Specific Recommendations for Vulnerable Groups
+        if (isElderly && aqi > 100) {
+            recommendations.push({ title: "Special Alert for Seniors", message: "You are at higher risk. Avoid prolonged outdoor time and monitor for any respiratory or cardiac symptoms.", type: "warning" });
+        }
+        if (isPregnant && aqi > 100) {
+            recommendations.push({ title: "Alert for Expecting Mothers", message: "Air quality is poor. It's crucial to avoid outdoor exposure. Use N95 masks if you must go out.", type: "danger" });
+        }
+        if (hasAsthma && aqi > 100) {
+            recommendations.push({ title: "Asthma Advisory", message: "High pollution can trigger asthma. Keep your rescue inhaler with you at all times.", type: "warning" });
+        }
+        if (hasHeartDisease && aqi > 100) {
+             recommendations.push({ title: "Heart Condition Advisory", message: "Poor air quality can strain your heart. Avoid exertion and watch for symptoms like chest pain.", type: "warning" });
+        }
+        
+        return recommendations;
+    };
+    
+    const recommendations = getRecommendations();
+    const recommendationIcons = {
+        info: <AlertTriangle className="h-4 w-4" />,
+        warning: <AlertTriangle className="h-4 w-4" />,
+        danger: <AlertTriangle className="h-4 w-4 text-red-500" />,
+        success: <UserCheck className="h-4 w-4" />
+    };
+     const recommendationColors = {
+        info: 'border-l-blue-500 bg-blue-500/10 text-blue-300',
+        warning: 'border-l-yellow-500 bg-yellow-500/10 text-yellow-300',
+        danger: 'border-l-red-500 bg-red-500/10 text-red-300',
+        success: 'border-l-green-500 bg-green-500/10 text-green-300'
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-full bg-background">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-emerald-500"></div>
+            </div>
+        );
+    }
+    
+    if (showProfileForm || !profile) {
+        return <ProfileSetupForm existingProfile={profile} onProfileSaved={handleProfileSaved} />;
+    }
+
+    return (
+        <motion.div 
+            className="p-3 md:p-6 lg:p-8 space-y-4 md:space-y-6 min-h-screen bg-background"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+        >
+            <motion.div 
+                className="flex flex-col md:flex-row justify-between md:items-center gap-3 md:gap-4"
+                initial={{ y: -20 }}
+                animate={{ y: 0 }}
+            >
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3">
+                        <Heart className="w-7 h-7 md:w-8 md:h-8 text-red-500" />
+                        My Health Dashboard
+                    </h1>
+                    <p className="text-sm text-muted-foreground mt-1">Personalized health insights based on air quality exposure</p>
+                </div>
+                 <Button variant="outline" onClick={() => setShowProfileForm(true)}>
+                    <UserCheck className="w-4 h-4 mr-2" />
+                    Update Profile
+                </Button>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                <Card className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 border-emerald-500/20 shadow-xl">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-emerald-500 flex items-center gap-2 text-lg">
+                            <Activity className="w-5 h-5" />
+                            Personal Health Score
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-center">
+                            <div className={`text-3xl md:text-4xl font-bold ${getHealthScoreColor(healthScore)}`}>
+                                {healthScore}
+                            </div>
+                            <Progress value={healthScore} className="mt-4 h-2" />
+                            <p className="text-sm text-muted-foreground mt-2">
+                                {healthScore >= 80 ? "Excellent" : healthScore >= 60 ? "Good" : "Needs Attention"}
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="shadow-xl">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                            <Wind className="w-5 h-5 text-sky-500" />
+                            Live AQI Exposure
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-sky-500 mb-2">{averageAQI}</div>
+                            <Badge className="bg-sky-500/20 text-sky-400 border-sky-500/30 px-3 py-1">
+                                {isConnected ? 'Live Data' : 'Cached Data'}
+                            </Badge>
+                            <p className="text-sm text-muted-foreground mt-2">Current avg. AQI in your area</p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="shadow-xl">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                            <Trophy className="w-5 h-5 text-yellow-500" />
+                            Clean Air Points
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-yellow-500 mb-2">
+                                {profile.clean_air_points || 0}
+                            </div>
+                            <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 px-3 py-1">
+                                Level: {Math.floor((profile.clean_air_points || 0) / 100) + 1}
+                            </Badge>
+                            <p className="text-sm text-muted-foreground mt-2">Your green contributions!</p>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+            
+            <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+            >
+                <Card className="shadow-xl">
+                    <CardHeader>
+                        <CardTitle className="text-lg">Personalized AI Health Advisor</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        {recommendations.length > 0 ? recommendations.map((rec, index) => (
+                            <Alert key={index} className={`border-l-4 ${recommendationColors[rec.type]}`}>
+                                {recommendationIcons[rec.type]}
+                                <AlertTitle className="font-semibold">{rec.title}</AlertTitle>
+                                <AlertDescription>{rec.message}</AlertDescription>
+                            </Alert>
+                        )) : <p className="text-muted-foreground">No recommendations at this time. Air quality is good.</p>}
+                    </CardContent>
+                </Card>
+            </motion.div>
+            
+            <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+            >
+                <Card className="shadow-xl bg-gradient-to-br from-red-500/10 to-orange-500/10 border-red-500/20">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg text-red-500">
+                            <Ambulance className="w-6 h-6" />
+                            Emergency Contacts
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                            <Button
+                                onClick={() => window.location.href = 'tel:108'}
+                                className="flex items-center gap-3 p-4 h-auto bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 hover:text-red-300 justify-start"
+                            >
+                                <Phone className="w-5 h-5" />
+                                <div><div className="font-semibold">Ambulance</div><div className="text-sm opacity-80">108 / 102</div></div>
+                            </Button>
+                             <Button
+                                onClick={() => window.location.href = 'tel:100'}
+                                className="flex items-center gap-3 p-4 h-auto bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 text-purple-400 hover:text-purple-300 justify-start"
+                            >
+                                <Shield className="w-5 h-5" />
+                                <div><div className="font-semibold">Police</div><div className="text-sm opacity-80">100</div></div>
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </motion.div>
+        </motion.div>
+    );
+}
+
+export default function MyHealthPage() {
+    return (
+        <LiveDataProvider>
+            <MyHealthContent />
+        </LiveDataProvider>
+    )
+}
